@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en_US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Text to Image</title>
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      body {
+        font-family: Helvetica, Arial, sans-serif;
+        background: #222;
+        color: #eee;
+        flex-direction: column;
+      }
+
+      .background {
+        background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #ccc 75%),
+          linear-gradient(45deg, transparent 75%, #ccc 75%),
+          linear-gradient(45deg, #ccc 25%, #fff 25%);
+        background-size: 50px 50px;
+        background-position: 0 0, 0 0, -25px -25px, 25px 25px;
+        background-repeat: repeat;
+        line-height: 0;
+      }
+
+      .clip {
+        clip-path: circle(40%);
+      }
+
+      .wrapper {
+        flex-grow: 1;
+        overflow: auto;
+      }
+
+      .form-item {
+        display: flex;
+        margin: 0.5rem 0;
+      }
+
+      label {
+        display: inline-block;
+        width: 10rem;
+      }
+
+      input {
+        width: 6rem;
+      }
+
+      form {
+        display: flex;
+      }
+
+      #download-link {
+        display: none;
+      }
+
+      .half {
+        flex: 0 0 1;
+        flex-direction: column;
+        margin: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Text to Image</h1>
+    <form>
+      <div class="half">
+        <div class="form-item">
+          <label for="width">Width</label>
+          <input type="number" id="width" value="512" />
+        </div>
+        <div class="form-item">
+          <label for="height">Height</label>
+          <input type="number" id="height" value="512" />
+        </div>
+        <div class="form-item">
+          <label for="font">Font</label>
+          <input type="text" id="font" value="sans-serif" />
+        </div>
+        <div class="form-item">
+          <label for="font-size">Font Size</label>
+          <input type="number" id="font-size" value="256" />
+        </div>
+        <div class="form-item">
+          <label for="filename">File Name</label>
+          <input type="text" id="filename" value="" />
+        </div>
+      </div>
+      <div class="half">
+        <div class="form-item">
+          <label for="x">X</label>
+          <input type="number" id="x" value="0" />
+        </div>
+        <div class="form-item">
+          <label for="y">Y</label>
+          <input type="number" id="y" value="0" />
+        </div>
+        <div class="form-item">
+          <label for="text">Text</label>
+          <input type="text" id="text" value="🍼" />
+        </div>
+        <div class="form-item">
+          <label for="bg">Background</label>
+          <input type="text" id="bg" value="" />
+        </div>
+        <div class="form-item">
+          <label for="clip">Clip to PWA</label>
+          <input type="checkbox" id="clip" />
+        </div>
+        <div class="form-item">
+          <button type="button" id="download-button">Download</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="wrapper">
+      <div id="background" class="background">
+        <canvas id="canvas" width="192" height="192"></canvas>
+      </div>
+    </div>
+    <a id="download-link"></a>
+
+    <script>
+      let [
+        clip,
+        x,
+        y,
+        text,
+        fontSize,
+        width,
+        height,
+        canvas,
+        downloadLink,
+        bg,
+        background,
+        fileName,
+        downloadButton,
+      ] = [
+        "clip",
+        "x",
+        "y",
+        "text",
+        "font-size",
+        "width",
+        "height",
+        "canvas",
+        "download-link",
+        "bg",
+        "background",
+        "filename",
+        "download-button",
+      ].map(document.getElementById.bind(document));
+
+      let num = (x) => parseInt(x.value, 10) || 0;
+      let txt = (x) => x.value || "";
+
+      let onDownloadClick = () => {
+        let downloadFileName =
+          txt(filename) || `text-to-image_${Date.now()}.png`;
+        downloadLink.href = canvas.toDataURL("image/png");
+        downloadLink.download = downloadFileName;
+        downloadLink.click();
+      };
+
+      let onClipChanged = () => {
+        if (clip.checked) {
+          background.classList.add("clip");
+        } else {
+          background.classList.remove("clip");
+        }
+      };
+
+      let render = () => {
+        let context = canvas.getContext("2d");
+        let bgColor = txt(bg);
+        let content = txt(text);
+
+        // Just for fun
+        document.title = `${content} Text to Image`;
+
+        canvas.width = num(width);
+        canvas.height = num(height);
+        context.font = `${num(fontSize)}px ${txt(font)}`;
+
+        if (!!bgColor) {
+          context.fillStyle = bgColor;
+          context.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        let textDimensions = context.measureText(content);
+        let top = num(height) / 2 + num(fontSize) / 2 - num(y);
+        let left = num(width) / 2 - textDimensions.width / 2 - num(x);
+        context.strokeText(content, left, top);
+      };
+
+      [font, x, y, width, height, fontSize, text, bg].forEach((elem) =>
+        elem.addEventListener("input", render)
+      );
+      clip.addEventListener("click", onClipChanged);
+      downloadButton.addEventListener("click", onDownloadClick);
+      render();
+    </script>
+  </body>
+</html>
